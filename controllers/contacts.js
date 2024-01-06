@@ -1,15 +1,15 @@
-const contactsFunctions = require("../models/contacts");
 const { httpError } = require("../helpers");
 const { ctrlWrapper } = require("../decorators");
+const { Contact } = require("../models/contact");
 
 const getAll = async (req, res, next) => {
-  const contacts = await contactsFunctions.listContacts();
+  const contacts = await Contact.find();
   res.json(contacts);
 };
 
 const getById = async (req, res, next) => {
   const { contactId } = req.params;
-  const contact = await contactsFunctions.getContactById(contactId);
+  const contact = await Contact.findById(contactId);
   if (!contact) {
     throw httpError(404, `Contact with id ${contactId} not found`);
   }
@@ -18,17 +18,27 @@ const getById = async (req, res, next) => {
 
 const createContact = async (req, res, next) => {
   const body = req.body;
-  const newContact = await contactsFunctions.addContact(body);
+  const newContact = await Contact.create(body);
   res.status(201).json(newContact);
 };
 
 const updateById = async (req, res, next) => {
   const { contactId } = req.params;
-  const { name, email, phone } = req.body;
-  const updateContact = await contactsFunctions.updateContact(contactId, {
-    name,
-    email,
-    phone,
+  const body = req.body;
+  const updateContact = await Contact.findByIdAndUpdate(contactId, body, {
+    new: true,
+  });
+  if (!updateContact) {
+    throw httpError(404, `Contact with id ${contactId} not found`);
+  }
+  res.status(200).json(updateContact);
+};
+
+const updateFavorite = async (req, res, next) => {
+  const { contactId } = req.params;
+  const body = req.body;
+  const updateContact = await Contact.findByIdAndUpdate(contactId, body, {
+    new: true,
   });
   if (!updateContact) {
     throw httpError(404, `Contact with id ${contactId} not found`);
@@ -39,7 +49,7 @@ const updateById = async (req, res, next) => {
 const deleteById = async (req, res, next) => {
   const { contactId } = req.params;
   console.log(contactId);
-  const deletedContact = await contactsFunctions.removeContact(contactId);
+  const deletedContact = await Contact.findByIdAndDelete(contactId);
   if (!deletedContact) {
     throw httpError(404, `Contact with id ${contactId} not found`);
   }
@@ -51,5 +61,6 @@ module.exports = {
   getById: ctrlWrapper(getById),
   createContact: ctrlWrapper(createContact),
   updateById: ctrlWrapper(updateById),
+  updateFavorite: ctrlWrapper(updateFavorite),
   deleteById: ctrlWrapper(deleteById),
 };
