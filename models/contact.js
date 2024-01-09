@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 
-const { hendleMoongooseError } = require("../helpers");
+const { handleMoongooseError } = require("../helpers");
 
 const contactsSchema = new Schema(
   {
@@ -14,11 +14,16 @@ const contactsSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
   { versionKey: false, timestamps: true }
 );
 
-contactsSchema.post("save", hendleMoongooseError);
+contactsSchema.post("save", handleMoongooseError);
 
 const Contact = model("contact", contactsSchema);
 
