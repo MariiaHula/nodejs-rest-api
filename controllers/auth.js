@@ -1,11 +1,16 @@
 const bcrypt = require("bcrypt");
-// const { nanoid } = require("nanoid");
 const { envsConfig } = require("../configs");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const { httpError } = require("../helpers");
 const { ctrlWrapper } = require("../decorators");
 const { User } = require("../models/user");
+
+const avatarsDir = path.resolve("public", "avatars");
 
 const register = async (req, res, next) => {
   const { email, password } = req.body;
@@ -15,8 +20,13 @@ const register = async (req, res, next) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const avatarURL = gravatar.url(email);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   res.status(201).json({
     email: newUser.email,
@@ -84,10 +94,34 @@ const updateSubscription = async (req, res, next) => {
 
   res.status(200).json(updatedUser);
 };
+
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const oldPath = req.file.path;
+
+  const filename = `${_id}_${req.file.originalname}`;
+  const ext = path.extname(filename);
+
+  if (ext === ".exe") {
+    throw httpError(400, "can't save file with extension .exe");
+  }
+
+  const newPath = path.join(avatarsDir, filename);
+
+  (await Jimp.read(oldPath)).resize(250, 250).write(newPath);
+
+  await fs.rename(oldPath, newPath);
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL }, { new: true });
+
+  res.status(200).json({ avatarURL });
+};
+
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   logout: ctrlWrapper(logout),
   current: ctrlWrapper(current),
   updateSubscription: ctrlWrapper(updateSubscription),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
