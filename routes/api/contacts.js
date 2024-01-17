@@ -8,29 +8,19 @@ const { authenticate } = require("../../middlewares");
 
 const router = express.Router();
 
-router.get("/", authenticate, contactsControllers.getAll);
+router.use(authenticate);
+
+router.get("/", contactsControllers.getAll);
 router.post(
   "/",
-  authenticate,
   validateBodySchema(contactsSchemas.createContactSchema),
   contactsControllers.createContact
 );
 
-router.get(
-  "/:contactId",
-  authenticate,
-  validateMongoId,
-  contactsControllers.getById
-);
-router.delete(
-  "/:contactId",
-  authenticate,
-  validateMongoId,
-  contactsControllers.deleteById
-);
+router.get("/:contactId", validateMongoId, contactsControllers.getById);
+router.delete("/:contactId", validateMongoId, contactsControllers.deleteById);
 router.put(
   "/:contactId",
-  authenticate,
   validateMongoId,
   validateBodySchema(contactsSchemas.createContactSchema),
   contactsControllers.updateById
@@ -38,7 +28,6 @@ router.put(
 
 router.patch(
   "/:contactId/favorite",
-  authenticate,
   validateMongoId,
   validateBodySchema(contactsSchemas.updateFavorite),
   contactsControllers.updateFavorite
